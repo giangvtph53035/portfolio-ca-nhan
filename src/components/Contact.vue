@@ -3,12 +3,21 @@
     <div class="container mx-auto px-6">
       <!-- Section Header -->
       <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+        <h2 class="text-3xl md    // Gọi EmailJS service
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service_id: 'service_7o15cle', // Service ID từ EmailJS
+        template_id: 'template_mpe7xvk', // Template ID từ EmailJS
+        user_id: 'X1ZdSZfAJezogJHyj', // Public Key từ EmailJS
+        template_params: templateParams
+      })
+    })t-bold text-gray-800 mb-4">
           Liên hệ với tôi
         </h2>
-        <p class="text-gray-600 text-lg max-w-2xl mx-auto">
-          Có ý tưởng dự án thú vị? Hãy cùng nhau thảo luận và biến nó thành hiện thực!
-        </p>
       </div>
 
       <div class="max-w-6xl mx-auto">
@@ -162,6 +171,11 @@
             <div v-if="showSuccess" class="mt-6 p-4 bg-green-100 text-green-700 rounded-lg">
               Cảm ơn bạn đã liên hệ! Tôi sẽ phản hồi trong thời gian sớm nhất.
             </div>
+            
+            <!-- Error Message -->
+            <div v-if="showError" class="mt-6 p-4 bg-red-100 text-red-700 rounded-lg">
+              {{ errorMessage }}
+            </div>
           </div>
         </div>
       </div>
@@ -174,6 +188,8 @@ import { ref, reactive } from 'vue'
 
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
+const showError = ref(false)
+const errorMessage = ref('')
 
 const form = reactive({
   name: '',
@@ -184,21 +200,72 @@ const form = reactive({
 
 const submitForm = async () => {
   isSubmitting.value = true
+  showError.value = false
   
-  // Simulate form submission
-  setTimeout(() => {
-    isSubmitting.value = false
-    showSuccess.value = true
+  try {
+    // Sử dụng EmailJS để gửi email
+    const templateParams = {
+      from_name: form.name,
+      from_email: form.email,
+      subject: form.subject,
+      message: form.message,
+      to_email: 'gvutruong871@gmail.com',
+      time: new Date().toLocaleString('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }
     
-    // Reset form
-    Object.keys(form).forEach(key => {
-      form[key] = ''
+    // Debug logging
+    console.log('Sending email with params:', templateParams)
+    
+    // Gọi EmailJS service
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service_id: 'service_7o15cle',
+        template_id: 'template_mpe7xvk',  
+        user_id: 'X1ZdSZfAJezogJHyj',
+        template_params: templateParams
+      })
     })
     
-    // Hide success message after 5 seconds
+    if (response.ok) {
+      showSuccess.value = true
+      // Reset form
+      Object.keys(form).forEach(key => {
+        form[key] = ''
+      })
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        showSuccess.value = false
+      }, 5000)
+    } else {
+      const errorText = await response.text()
+      console.error('EmailJS Error Response:', response.status, errorText)
+      throw new Error(`Failed to send email: ${response.status} - ${errorText}`)
+    }
+    
+  } catch (error) {
+    console.error('Error sending email:', error)
+    showError.value = true
+    errorMessage.value = 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau hoặc liên hệ trực tiếp qua email.'
+    
+    // Hide error message after 5 seconds
     setTimeout(() => {
-      showSuccess.value = false
+      showError.value = false
     }, 5000)
-  }, 1500)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
