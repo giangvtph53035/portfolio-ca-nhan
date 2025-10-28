@@ -59,7 +59,6 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    // Always scroll to top when navigating to a new route
     if (savedPosition) {
       return savedPosition
     } else {
